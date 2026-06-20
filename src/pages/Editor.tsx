@@ -5,7 +5,9 @@ import VariablePanel from '@/components/VariablePanel';
 import ImageUploader from '@/components/ImageUploader';
 import ResultPanel from '@/components/ResultPanel';
 import ModelConfig from '@/components/ModelConfig';
-import { Save, PanelRightOpen, Play, GitCompare } from 'lucide-react';
+import BatchTestConfig from '@/components/BatchTestConfig';
+import BatchResultTable from '@/components/BatchResultTable';
+import { Save, PanelRightOpen, Play, GitCompare, Layers, Sparkles } from 'lucide-react';
 
 export default function Editor() {
   const currentTemplate = useAppStore((s) => s.currentTemplate);
@@ -17,6 +19,10 @@ export default function Editor() {
   const isExecuting = useAppStore((s) => s.isExecuting);
   const saveTemplate = useAppStore((s) => s.saveTemplate);
   const abResult = useAppStore((s) => s.abResult);
+  const batchMode = useAppStore((s) => s.batchMode);
+  const setBatchMode = useAppStore((s) => s.setBatchMode);
+  const batchResults = useAppStore((s) => s.batchResults);
+  const isBatchExecuting = useAppStore((s) => s.isBatchExecuting);
 
   const [saveName, setSaveName] = useState('');
   const [saveTags, setSaveTags] = useState('');
@@ -33,6 +39,8 @@ export default function Editor() {
     setSaveName('');
     setSaveTags('');
   };
+
+  const showBatchResults = batchMode && (batchResults || isBatchExecuting);
 
   return (
     <div className="flex h-[calc(100vh-52px)]">
@@ -58,6 +66,30 @@ export default function Editor() {
                 >
                   <PanelRightOpen size={13} />
                   变量面板
+                </button>
+              </div>
+              <div className="flex items-center gap-1 rounded-md bg-[var(--bg-tertiary)] p-0.5">
+                <button
+                  onClick={() => setBatchMode(false)}
+                  className={`flex items-center gap-1 rounded px-2.5 py-1 text-[11px] transition-colors ${
+                    !batchMode
+                      ? 'bg-[var(--bg-primary)] text-[var(--accent)] shadow'
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  <Sparkles size={11} />
+                  单次
+                </button>
+                <button
+                  onClick={() => setBatchMode(true)}
+                  className={`flex items-center gap-1 rounded px-2.5 py-1 text-[11px] transition-colors ${
+                    batchMode
+                      ? 'bg-[var(--bg-primary)] text-[var(--accent-purple)] shadow'
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  <Layers size={11} />
+                  批量
                 </button>
               </div>
             </div>
@@ -108,39 +140,56 @@ export default function Editor() {
                 </div>
               )}
 
-              <ImageUploader />
-
-              <ModelConfig />
-
-              <div className="flex gap-2">
-                <button
-                  onClick={execute}
-                  disabled={isExecuting}
-                  className="glow-button flex flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--accent)] py-2.5 text-sm font-semibold text-[var(--bg-primary)] transition-all hover:brightness-110 disabled:opacity-50"
-                >
-                  <Play size={16} />
-                  {isExecuting ? '运行中...' : '运行'}
-                </button>
-                <button
-                  onClick={executeAB}
-                  disabled={isExecuting}
-                  className="flex items-center gap-2 rounded-lg border border-[var(--accent)] bg-transparent px-4 py-2.5 text-sm font-medium text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/10 disabled:opacity-50"
-                >
-                  <GitCompare size={16} />
-                  A/B
-                </button>
-              </div>
+              {batchMode ? (
+                <BatchTestConfig />
+              ) : (
+                <>
+                  <ImageUploader />
+                  <ModelConfig />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={execute}
+                      disabled={isExecuting || isBatchExecuting}
+                      className="glow-button flex flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--accent)] py-2.5 text-sm font-semibold text-[var(--bg-primary)] transition-all hover:brightness-110 disabled:opacity-50"
+                    >
+                      <Play size={16} />
+                      {isExecuting ? '运行中...' : '运行'}
+                    </button>
+                    <button
+                      onClick={executeAB}
+                      disabled={isExecuting || isBatchExecuting}
+                      className="flex items-center gap-2 rounded-lg border border-[var(--accent)] bg-transparent px-4 py-2.5 text-sm font-medium text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/10 disabled:opacity-50"
+                    >
+                      <GitCompare size={16} />
+                      A/B
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
           <div className="flex w-1/2 flex-col">
             <div className="border-b border-[var(--border)] px-4 py-2">
               <p className="text-xs font-medium text-[var(--text-secondary)]">
-                输出结果{abResult ? ' (A/B 模式)' : ''}
+                {batchMode ? (showBatchResults ? '批量对比结果' : '批量结果输出') : `输出结果${abResult ? ' (A/B 模式)' : ''}`}
               </p>
             </div>
             <div className="flex-1 overflow-hidden">
-              <ResultPanel />
+              {showBatchResults ? (
+                <BatchResultTable />
+              ) : batchMode ? (
+                <div className="flex h-full items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)]">
+                  <div className="text-center">
+                    <Layers size={32} className="mx-auto mb-2 opacity-30 text-[var(--accent-purple)]" />
+                    <p className="text-sm text-[var(--text-secondary)]">
+                      在左侧配置变量取值组合后点击"运行批量测试"
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <ResultPanel />
+              )}
             </div>
           </div>
         </div>
