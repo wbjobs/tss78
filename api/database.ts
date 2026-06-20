@@ -54,9 +54,21 @@ db.exec(`
     size INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+  CREATE TABLE IF NOT EXISTS upload_sessions (
+    id TEXT PRIMARY KEY,
+    filename TEXT NOT NULL,
+    mimetype TEXT NOT NULL,
+    total_size INTEGER NOT NULL,
+    total_chunks INTEGER NOT NULL,
+    uploaded_chunks INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'pending',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
   CREATE INDEX IF NOT EXISTS idx_variable_sets_template ON variable_sets(template_id);
   CREATE INDEX IF NOT EXISTS idx_execution_records_template ON execution_records(template_id);
   CREATE INDEX IF NOT EXISTS idx_execution_records_created ON execution_records(created_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_upload_sessions_status ON upload_sessions(status);
 `)
 
 export default db
